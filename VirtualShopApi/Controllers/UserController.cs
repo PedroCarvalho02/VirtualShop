@@ -1,3 +1,5 @@
+
+
 using LojaVirtualAPI.Data;
 using LojaVirtualAPI.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -25,6 +27,7 @@ namespace LojaVirtualAPI.Controllers
             _config = config;
         }
 
+        
         [HttpPost("register")]
         public async Task<IActionResult> Registrar(User usuario)
         {
@@ -33,31 +36,28 @@ namespace LojaVirtualAPI.Controllers
                 return Problem("O conjunto de entidades 'ApplicationDbContext.Users' é nulo.");
             }
 
-            
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            
             if (await _contexto.Users.AnyAsync(u => u.CPF == usuario.CPF))
             {
                 return BadRequest("CPF já está em uso.");
             }
 
-            
             if (await _contexto.Users.AnyAsync(u => u.Email == usuario.Email))
             {
                 return BadRequest("Email já está em uso.");
             }
 
-            
             usuario.Password = BCrypt.Net.BCrypt.HashPassword(usuario.Password);
             _contexto.Users.Add(usuario);
             await _contexto.SaveChangesAsync();
             return Ok(usuario);
         }
 
+        
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginRequest login)
         {
@@ -105,6 +105,7 @@ namespace LojaVirtualAPI.Controllers
             return Ok(new { token = tokenString });
         }
 
+        
         [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
@@ -132,6 +133,47 @@ namespace LojaVirtualAPI.Controllers
             return Ok("Logout realizado com sucesso.");
         }
 
+        
+        [Authorize(Roles = "Admin")]
+        [HttpPost("add-admin")]
+        public async Task<IActionResult> AdicionarAdmin([FromBody] CreateAdminRequest adminRequest)
+        {
+            if (_contexto.Users == null)
+            {
+                return Problem("O conjunto de entidades 'ApplicationDbContext.Users' é nulo.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (await _contexto.Users.AnyAsync(u => u.CPF == adminRequest.CPF))
+            {
+                return BadRequest("CPF já está em uso.");
+            }
+
+            if (await _contexto.Users.AnyAsync(u => u.Email == adminRequest.Email))
+            {
+                return BadRequest("Email já está em uso.");
+            }
+
+            var novoAdmin = new User
+            {
+                Name = adminRequest.Name,
+                CPF = adminRequest.CPF,
+                Email = adminRequest.Email,
+                Password = BCrypt.Net.BCrypt.HashPassword(adminRequest.Password),
+                IsAdmin = true
+            };
+
+            _contexto.Users.Add(novoAdmin);
+            await _contexto.SaveChangesAsync();
+
+            return Ok(novoAdmin);
+        }
+
+        
         [Authorize]
         [HttpGet("profile")]
         public IActionResult Perfil()

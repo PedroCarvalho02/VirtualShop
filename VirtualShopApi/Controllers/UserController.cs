@@ -1,5 +1,3 @@
-// Controllers/UserController.cs
-
 using LojaVirtualAPI.Data;
 using LojaVirtualAPI.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -35,25 +33,25 @@ namespace LojaVirtualAPI.Controllers
                 return Problem("O conjunto de entidades 'ApplicationDbContext.Users' é nulo.");
             }
 
-            // Validar o modelo
+            
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            // Verificar se o CPF já existe
+            
             if (await _contexto.Users.AnyAsync(u => u.CPF == usuario.CPF))
             {
                 return BadRequest("CPF já está em uso.");
             }
 
-            // Verificar se o Email já existe
+            
             if (await _contexto.Users.AnyAsync(u => u.Email == usuario.Email))
             {
                 return BadRequest("Email já está em uso.");
             }
 
-            // Hash da senha
+            
             usuario.Password = BCrypt.Net.BCrypt.HashPassword(usuario.Password);
             _contexto.Users.Add(usuario);
             await _contexto.SaveChangesAsync();

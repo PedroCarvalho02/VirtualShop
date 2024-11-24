@@ -1,3 +1,4 @@
+using BCrypt.Net;
 using LojaVirtualAPI.Data;
 using LojaVirtualAPI.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -6,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace LojaVirtualAPI.Controllers
 {
@@ -13,51 +15,53 @@ namespace LojaVirtualAPI.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ApplicationDbContext _contexto;
 
-        public UserController(ApplicationDbContext context)
+        public UserController(ApplicationDbContext contexto)
         {
-            _context = context;
+            _contexto = contexto;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(User user)
+        public async Task<IActionResult> Registrar(User usuario)
         {
-            if (_context.Users == null)
+            if (_contexto.Users == null)
             {
-                return Problem("Entity set 'ApplicationDbContext.Users' is null.");
+                return Problem("O conjunto de entidades 'ApplicationDbContext.Users' é nulo.");
             }
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-            return Ok(user);
+
+            usuario.Password = BCrypt.Net.BCrypt.HashPassword(usuario.Password);
+
+            _contexto.Users.Add(usuario);
+            await _contexto.SaveChangesAsync();
+            return Ok(usuario);
         }
 
         [HttpPost("login")]
         public IActionResult Login([FromBody] User login)
         {
-            if (_context.Users == null)
+            if (_contexto.Users == null)
             {
-                return Problem("Entity set 'ApplicationDbContext.Users' is null.");
+                return Problem("O conjunto de entidades 'ApplicationDbContext.Users' é nulo.");
             }
-            var user = _context.Users.SingleOrDefault(u => u.Email == login.Email && u.Password == login.Password);
-            if (user == null)
+            var usuario = _contexto.Users.SingleOrDefault(u => u.Email == login.Email);
+            if (usuario == null || !BCrypt.Net.BCrypt.Verify(login.Password, usuario.Password))
             {
                 return Unauthorized();
             }
 
-            // Generate JWT token
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes("your_secret_key");
+            var chave = Encoding.UTF8.GetBytes("0kPQ7LB8g7yrgkg5DGs5DU6rKZTQIZ5LCCED22BA9B1529AA3B9BA2B37BBCE");
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(ClaimTypes.Email, user.Email),
-                    new Claim(ClaimTypes.Role, user.IsAdmin ? "Admin" : "User")
+                    new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                    new Claim(ClaimTypes.Email, usuario.Email ?? string.Empty),
+                    new Claim(ClaimTypes.Role, usuario.IsAdmin ? "Admin" : "User")
                 }),
                 Expires = DateTime.UtcNow.AddHours(1),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(chave), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var tokenString = tokenHandler.WriteToken(token);
@@ -66,16 +70,43 @@ namespace LojaVirtualAPI.Controllers
         }
 
         [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            if (string.IsNullOrEmpty(token))
+            {
+                return BadRequest("Token é necessário.");
+            }
+
+            var tokenRevogado = new RevokedToken
+            {
+                Token = token,
+                RevokedAt = DateTime.UtcNow
+            };
+
+            if (_contexto.RevokedTokens == null)
+            {
+                return Problem("O conjunto de entidades 'ApplicationDbContext.RevokedTokens' é nulo.");
+            }
+
+            _contexto.RevokedTokens.Add(tokenRevogado);
+            await _contexto.SaveChangesAsync();
+
+            return Ok("Logout realizado com sucesso.");
+        }
+
+        [Authorize]
         [HttpGet("profile")]
-        public IActionResult Profile()
+        public IActionResult Perfil()
         {
             var userId = int.Parse(User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value);
-            var user = _context.Users?.Find(userId);
-            if (user == null)
+            var usuario = _contexto.Users?.Find(userId);
+            if (usuario == null)
             {
                 return NotFound();
             }
-            return Ok(user);
+            return Ok(usuario);
         }
     }
 }

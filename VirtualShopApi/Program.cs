@@ -1,6 +1,20 @@
+// Rotas da API:
+// 
+// UserController:
+// - POST /api/user/register: Registrar um novo usuário
+// - POST /api/user/login: Fazer login e obter um token JWT
+// - POST /api/user/logout: Fazer logout e revogar o token JWT (necessário token JWT no cabeçalho Authorization)
+// - GET /api/user/profile: Obter perfil do usuário autenticado (necessário token JWT no cabeçalho Authorization)
+// 
+// ProductController:
+// - GET /api/product: Listar todos os produtos
+// - GET /api/product/{id}: Obter um produto específico pelo ID
+// - POST /api/product: Adicionar um novo produto (necessário token JWT de administrador no cabeçalho Authorization)
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using LojaVirtualAPI.Data;
 using LojaVirtualAPI.Models;
@@ -11,18 +25,40 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite("Data Source=lojaVirtual.db"));
 
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+var configuracao = builder.Configuration;
+var configuracaoJwt = configuracao.GetSection("Jwt");
+var chaveJwt = configuracaoJwt["Key"];
+if (string.IsNullOrEmpty(chaveJwt))
+{
+    throw new InvalidOperationException("A chave JWT não está configurada corretamente.");
+}
+var chave = Encoding.UTF8.GetBytes(chaveJwt);
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
+            ValidateIssuer = false,
+            ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = "yourdomain.com",
-            ValidAudience = "yourdomain.com",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your_secret_key"))
+            IssuerSigningKey = new SymmetricSecurityKey(chave),
+            LifetimeValidator = (notBefore, expires, securityToken, validationParameters) =>
+            {
+                var token = securityToken as JwtSecurityToken;
+                var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+                var httpContextAccessor = validationParameters.IssuerSigningKey as IHttpContextAccessor;
+                if (httpContextAccessor?.HttpContext == null)
+                {
+                    return false;
+                }
+                var dbContext = httpContextAccessor.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                var isRevoked = dbContext.RevokedTokens?.Any(rt => rt.Token == tokenString) ?? false;
+                return !isRevoked && expires > DateTime.UtcNow;
+            }
         };
     });
 
@@ -40,23 +76,23 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-using (var scope = app.Services.CreateScope())
+using (var escopo = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.Migrate();
+    var contexto = escopo.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    contexto.Database.Migrate();
 
-    if (context.Users != null && !context.Users.Any(u => u.Email == "admin@admin.com"))
+    if (contexto.Users != null && !contexto.Users.Any(u => u.Email == "admin@admin.com"))
     {
-        var adminUser = new User
+        var usuarioAdmin = new User
         {
             Name = "Admin",
             CPF = "000.000.000-00",
             Email = "admin@admin.com",
-            Password = "admin", 
+            Password = BCrypt.Net.BCrypt.HashPassword("admin"),
             IsAdmin = true
         };
-        context.Users.Add(adminUser);
-        context.SaveChanges();
+        contexto.Users.Add(usuarioAdmin);
+        contexto.SaveChanges();
     }
 }
 

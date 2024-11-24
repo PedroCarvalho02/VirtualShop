@@ -166,3 +166,4 @@ C:\3º Periodo\FullStack\VirtualShop\VirtualShopApi\obj\Debug\net8.0\refint\Virt
 C:\3º Periodo\FullStack\VirtualShop\VirtualShopApi\obj\Debug\net8.0\VirtualShopApi.pdb
 C:\3º Periodo\FullStack\VirtualShop\VirtualShopApi\obj\Debug\net8.0\VirtualShopApi.genruntimeconfig.cache
 C:\3º Periodo\FullStack\VirtualShop\VirtualShopApi\obj\Debug\net8.0\ref\VirtualShopApi.dll
+C:\3º Periodo\FullStack\VirtualShop\VirtualShopApi\bin\Debug\net8.0\BCrypt.Net-Next.dll

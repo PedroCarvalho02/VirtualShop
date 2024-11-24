@@ -9,5 +9,6 @@ namespace LojaVirtualAPI.Data
 
         public DbSet<User>? Users { get; set; }
         public DbSet<Product>? Products { get; set; }
+        public DbSet<RevokedToken>? RevokedTokens { get; set; }
     }
 }

@@ -2,7 +2,8 @@ using LojaVirtualAPI.Data;
 using LojaVirtualAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace LojaVirtualAPI.Controllers
 {
@@ -10,45 +11,54 @@ namespace LojaVirtualAPI.Controllers
     [Route("api/[controller]")]
     public class ProductController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ApplicationDbContext _contexto;
 
-        public ProductController(ApplicationDbContext context)
+        public ProductController(ApplicationDbContext contexto)
         {
-            _context = context;
+            _contexto = contexto;
         }
 
         [HttpGet]
-        public IActionResult GetProducts()
+        public IActionResult ObterProdutos()
         {
-            var products = _context.Products?.ToList();
-            if (products == null)
+            var produtos = _contexto.Products?.ToList();
+            if (produtos == null)
                 return NotFound();
 
-            return Ok(products);
+            return Ok(produtos);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetProduct(int id)
+        public IActionResult ObterProduto(int id)
         {
-            var product = _context.Products?.Find(id);
-            if (product == null)
+            var produto = _contexto.Products?.Find(id);
+            if (produto == null)
                 return NotFound();
 
-            return Ok(product);
+            return Ok(produto);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<IActionResult> AddProduct(Product product)
+        public async Task<IActionResult> AdicionarProduto(Product produto)
         {
-            if (_context.Products == null)
+            if (_contexto.Products == null)
             {
-                return Problem("Entity set 'ApplicationDbContext.Products' is null.");
+                return Problem("O conjunto de entidades 'ApplicationDbContext.Products' é nulo.");
             }
+            _contexto.Products.Add(produto);
+            await _contexto.SaveChangesAsync();
+            return Ok(produto);
+        }
 
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();
-            return Ok(product);
+        [HttpGet("search")]
+        public IActionResult PesquisarProdutoPorNome(string nome)
+        {
+            var produtos = _contexto.Products?.Where(p => p.Name.Contains(nome)).ToList();
+            if (produtos == null || produtos.Count == 0)
+                return NotFound();
+
+            return Ok(produtos);
         }
     }
 }

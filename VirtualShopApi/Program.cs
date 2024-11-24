@@ -10,6 +10,7 @@
 // - GET /api/product: Listar todos os produtos
 // - GET /api/product/{id}: Obter um produto específico pelo ID
 // - POST /api/product: Adicionar um novo produto (necessário token JWT de administrador no cabeçalho Authorization)
+// - GET /api/product/search?nome={nome}: Pesquisar produtos pelo nome
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

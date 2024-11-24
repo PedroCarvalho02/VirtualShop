@@ -1,0 +1,6 @@
+@VirtualShopApi_HostAddress = http://localhost:5199
+
+GET {{VirtualShopApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

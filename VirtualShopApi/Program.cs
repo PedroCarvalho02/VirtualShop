@@ -1,6 +1,22 @@
+// GET /auth/google-login
+// GET /auth/signin-google
+
+// UserController
+// POST /api/user/register
+// POST /api/user/login
+// POST /api/user/logout
+// POST /api/user/add-admin
+// GET /api/user/profile
+
+// ProductController
+// GET /api/product
+// GET /api/product/{id}
+// POST /api/product
+// GET /api/product/search
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using LojaVirtualAPI.Data;
@@ -31,10 +47,10 @@ if (!double.TryParse(expiresInMinutesConfig, out double expiresInMinutes))
 
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 })
-.AddJwtBearer(options =>
+.AddCookie()
+.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -44,6 +60,15 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(chaveJwt))
     };
+})
+.AddGoogle(options =>
+{
+    IConfigurationSection googleAuthNSection =
+        builder.Configuration.GetSection("Authentication:Google");
+
+    options.ClientId = googleAuthNSection["ClientId"] ?? throw new InvalidOperationException("Google ClientId is not configured.");
+    options.ClientSecret = googleAuthNSection["ClientSecret"] ?? throw new InvalidOperationException("Google ClientSecret is not configured.");
+    options.CallbackPath = "/signin-google";
 });
 
 builder.Services.AddAuthorization();

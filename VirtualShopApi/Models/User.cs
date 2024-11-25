@@ -9,7 +9,7 @@ namespace LojaVirtualAPI.Models
         [Required]
         public string? Name { get; set; }
 
-        [Required]
+        // [Required]
         [RegularExpression(@"^\d{11}$", ErrorMessage = "CPF deve conter exatamente 11 números.")]
         public string? CPF { get; set; }
 

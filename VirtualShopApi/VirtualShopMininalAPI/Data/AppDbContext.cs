@@ -12,6 +12,7 @@ namespace VirtualShopMinimalAPI.Data
         public DbSet<Product>? Products { get; set; }
         public DbSet<Sale>? Sales { get; set; }
         public DbSet<User>? Users { get; set; }
+        public DbSet<SaleProduct>? SaleProducts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -28,7 +29,27 @@ namespace VirtualShopMinimalAPI.Data
 
             modelBuilder.Entity<Product>()
                 .Property(p => p.ImageUrl)
-                .HasMaxLength(500); 
+                .HasMaxLength(500);
+
+            // Configuração do relacionamento N:N entre Sale e Product
+            modelBuilder.Entity<SaleProduct>()
+                .HasKey(sp => new { sp.SaleId, sp.ProductId });
+
+            modelBuilder.Entity<SaleProduct>()
+                .HasOne(sp => sp.Sale)
+                .WithMany(s => s.SaleProducts)
+                .HasForeignKey(sp => sp.SaleId);
+
+            modelBuilder.Entity<SaleProduct>()
+                .HasOne(sp => sp.Product)
+                .WithMany(p => p.SaleProducts)
+                .HasForeignKey(sp => sp.ProductId);
+
+            // Configuração do relacionamento 1:N entre User e Sale
+            modelBuilder.Entity<Sale>()
+                .HasOne(s => s.User)
+                .WithMany(u => u.Sales)
+                .HasForeignKey(s => s.UserId);
         }
     }
 }

@@ -3,8 +3,9 @@ namespace VirtualShopMinimalAPI.Models
     public class Sale
     {
         public int Id { get; set; }
-        public int ProductId { get; set; }
-        public int Quantidade { get; set; }
         public DateTime DataVenda { get; set; }
+        public int UserId { get; set; }
+        public User? User { get; set; } 
+        public ICollection<SaleProduct>? SaleProducts { get; set; } 
     }
 }

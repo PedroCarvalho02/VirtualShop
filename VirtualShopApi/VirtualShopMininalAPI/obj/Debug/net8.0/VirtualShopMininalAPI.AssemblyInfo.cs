@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VirtualShopMininalAPI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0611949016b45f1fb456d83152b32411ce4c5e39")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c01308263cffedf993c4b9d4154683055750109a")]
 [assembly: System.Reflection.AssemblyProductAttribute("VirtualShopMininalAPI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VirtualShopMininalAPI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

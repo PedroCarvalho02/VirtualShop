@@ -18,5 +18,7 @@ namespace VirtualShopMinimalAPI.Models
         public string? Senha { get; set; }
 
         public bool IsAdmin { get; set; }
+
+        public ICollection<Sale>? Sales { get; set; }
     }
 }

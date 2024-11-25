@@ -24,19 +24,14 @@ namespace VirtualShopMininalAPI.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ImageUrl")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Preco")
                         .HasColumnType("TEXT");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -52,15 +47,32 @@ namespace VirtualShopMininalAPI.Migrations
                     b.Property<DateTime>("DataVenda")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Sales");
+                });
+
+            modelBuilder.Entity("VirtualShopMinimalAPI.Models.SaleProduct", b =>
+                {
+                    b.Property<int>("SaleId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Quantidade")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("Id");
+                    b.HasKey("SaleId", "ProductId");
 
-                    b.ToTable("Sales");
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("SaleProducts");
                 });
 
             modelBuilder.Entity("VirtualShopMinimalAPI.Models.User", b =>
@@ -96,6 +108,51 @@ namespace VirtualShopMininalAPI.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("VirtualShopMinimalAPI.Models.Sale", b =>
+                {
+                    b.HasOne("VirtualShopMinimalAPI.Models.User", "User")
+                        .WithMany("Sales")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("VirtualShopMinimalAPI.Models.SaleProduct", b =>
+                {
+                    b.HasOne("VirtualShopMinimalAPI.Models.Product", "Product")
+                        .WithMany("SaleProducts")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VirtualShopMinimalAPI.Models.Sale", "Sale")
+                        .WithMany("SaleProducts")
+                        .HasForeignKey("SaleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Sale");
+                });
+
+            modelBuilder.Entity("VirtualShopMinimalAPI.Models.Product", b =>
+                {
+                    b.Navigation("SaleProducts");
+                });
+
+            modelBuilder.Entity("VirtualShopMinimalAPI.Models.Sale", b =>
+                {
+                    b.Navigation("SaleProducts");
+                });
+
+            modelBuilder.Entity("VirtualShopMinimalAPI.Models.User", b =>
+                {
+                    b.Navigation("Sales");
                 });
 #pragma warning restore 612, 618
         }

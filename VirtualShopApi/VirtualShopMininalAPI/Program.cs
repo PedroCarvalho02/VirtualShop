@@ -13,7 +13,6 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -28,7 +27,6 @@ if (string.IsNullOrEmpty(jwtKey))
     throw new InvalidOperationException("JWT key is not configured.");
 }
 var key = Encoding.ASCII.GetBytes(jwtKey);
-
 
 builder.Services.AddAuthentication(options =>
 {
@@ -59,7 +57,6 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -68,10 +65,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 
 app.MapPost("/api/Product", async (Product produto, AppDbContext db) =>
 {
@@ -118,15 +113,35 @@ app.MapGet("/api/Product/search", async (string? nome, AppDbContext db) =>
 .WithName("PesquisarProdutos")
 .WithTags("Produtos");
 
-app.MapPost("/api/Sale", async (Sale venda, AppDbContext db) =>
+app.MapPost("/api/Sale", async (SaleRequest saleRequest, AppDbContext db) =>
 {
-    if (db.Sales == null)
+    if (db.Sales == null || db.Products == null)
     {
-        return Results.NotFound("Sales collection is null.");
+        return Results.NotFound("Sales or Products collection is null.");
     }
-    db.Sales.Add(venda);
+
+    if (saleRequest.ProductIds.Length != saleRequest.Quantidades.Length)
+    {
+        return Results.BadRequest("Product IDs and quantities must have the same length.");
+    }
+
+    for (int i = 0; i < saleRequest.ProductIds.Length; i++)
+    {
+        var productId = saleRequest.ProductIds[i];
+        var quantidade = saleRequest.Quantidades[i];
+
+        var product = await db.Products.FindAsync(productId);
+        if (product == null)
+        {
+            return Results.NotFound($"Product with ID {productId} not found.");
+        }
+
+        saleRequest.Sale.SaleProducts.Add(new SaleProduct { ProductId = productId, Quantidade = quantidade });
+    }
+
+    db.Sales.Add(saleRequest.Sale);
     await db.SaveChangesAsync();
-    return Results.Ok(venda);
+    return Results.Ok(saleRequest.Sale);
 })
 .WithName("RegistrarVenda")
 .WithTags("Vendas")
@@ -225,7 +240,6 @@ app.MapPost("/api/User/login", async (LoginRequest loginRequest, AppDbContext db
 
 app.MapPost("/api/User/logout", async (HttpContext http) =>
 {
-    
     return Results.Ok(new { Mensagem = "Logout realizado com sucesso" });
 })
 .WithName("LogoutUsuario")
@@ -253,8 +267,25 @@ app.MapPost("/api/Admin", async (User admin, AppDbContext db, IPasswordHasher<Us
 
 app.MapGet("/api/User/profile", async (AppDbContext db, HttpContext http) =>
 {
-    await Task.CompletedTask;
-    return Results.Ok(new { Mensagem = "Perfil do usuário" });
+    var userEmail = http.User.FindFirstValue(ClaimTypes.Email);
+    if (string.IsNullOrEmpty(userEmail))
+    {
+        return Results.Unauthorized();
+    }
+
+    var usuario = await db.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+    if (usuario == null)
+    {
+        return Results.NotFound("Usuário não encontrado.");
+    }
+
+    return Results.Ok(new 
+    { 
+        usuario.NomeUsuario, 
+        usuario.Email, 
+        usuario.Cpf, 
+        usuario.IsAdmin 
+    });
 })
 .WithName("PerfilUsuario")
 .WithTags("Usuários")
@@ -302,4 +333,5 @@ app.MapGet("/api/auth/google-callback", async (HttpContext http, AppDbContext db
 })
 .WithName("GoogleCallback")
 .WithTags("Autenticação");
+
 app.Run();

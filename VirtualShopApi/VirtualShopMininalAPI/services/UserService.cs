@@ -142,6 +142,12 @@ namespace VirtualShopMinimalAPI.Services
             }
 
             admin.IsAdmin = true;
+
+            if (!string.IsNullOrEmpty(admin.Senha))
+            {
+                admin.Senha = _passwordHasher.HashPassword(admin, admin.Senha);
+            }
+
             _db.Users.Add(admin);
             await _db.SaveChangesAsync();
             return Results.Ok(admin);

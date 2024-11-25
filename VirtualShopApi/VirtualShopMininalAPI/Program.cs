@@ -240,6 +240,7 @@ app.MapPost("/api/User/login", async (LoginRequest loginRequest, AppDbContext db
 
 app.MapPost("/api/User/logout", async (HttpContext http) =>
 {
+    await http.SignOutAsync();
     return Results.Ok(new { Mensagem = "Logout realizado com sucesso" });
 })
 .WithName("LogoutUsuario")

@@ -1,22 +1,5 @@
-// GET /auth/google-login
-// GET /auth/signin-google
-
-// UserController
-// POST /api/user/register
-// POST /api/user/login
-// POST /api/user/logout
-// POST /api/user/add-admin
-// GET /api/user/profile
-
-// ProductController
-// GET /api/product
-// GET /api/product/{id}
-// POST /api/product
-// GET /api/product/search
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using LojaVirtualAPI.Data;
@@ -29,29 +12,21 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite("Data Source=lojaVirtual.db"));
 
-builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-
-var configuracaoJwt = builder.Configuration.GetSection("Jwt");
-var chaveJwt = configuracaoJwt["Key"];
-var expiresInMinutesConfig = configuracaoJwt["ExpiresInMinutes"];
-
+var chaveJwt = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrEmpty(chaveJwt))
 {
     throw new InvalidOperationException("A chave JWT não está configurada corretamente.");
 }
 
-if (!double.TryParse(expiresInMinutesConfig, out double expiresInMinutes))
-{
-    throw new InvalidOperationException("A configuração 'Jwt:ExpiresInMinutes' é inválida ou não está definida.");
-}
-
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-.AddCookie()
-.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+.AddJwtBearer(options =>
 {
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = false,
@@ -63,8 +38,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddGoogle(options =>
 {
-    IConfigurationSection googleAuthNSection =
-        builder.Configuration.GetSection("Authentication:Google");
+    IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
 
     options.ClientId = googleAuthNSection["ClientId"] ?? throw new InvalidOperationException("Google ClientId is not configured.");
     options.ClientSecret = googleAuthNSection["ClientSecret"] ?? throw new InvalidOperationException("Google ClientSecret is not configured.");

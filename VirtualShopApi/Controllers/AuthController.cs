@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -24,7 +23,6 @@ namespace LojaVirtualAPI.Controllers
             _config = config;
         }
 
-        
         [HttpGet("google-login")]
         public IActionResult GoogleLogin()
         {
@@ -35,17 +33,13 @@ namespace LojaVirtualAPI.Controllers
             return Challenge(properties, GoogleDefaults.AuthenticationScheme);
         }
 
-        
         [HttpGet("signin-google")]
         public async Task<IActionResult> GoogleResponse()
         {
-            var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            var result = await HttpContext.AuthenticateAsync();
 
             if (!result.Succeeded)
                 return Unauthorized();
-
-            var claims = result.Principal.Identities
-                .FirstOrDefault()?.Claims;
 
             var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
             var name = result.Principal.FindFirst(ClaimTypes.Name)?.Value;
@@ -53,16 +47,14 @@ namespace LojaVirtualAPI.Controllers
             if (string.IsNullOrEmpty(email))
                 return Unauthorized();
 
-            
             var usuario = _contexto.Users?.FirstOrDefault(u => u.Email == email);
             if (usuario == null)
             {
-                
                 usuario = new User
                 {
                     Name = name,
                     Email = email,
-                    Password = BCrypt.Net.BCrypt.HashPassword("defaultpassword"), 
+                    Password = BCrypt.Net.BCrypt.HashPassword("defaultpassword"),
                     IsAdmin = false
                 };
                 if (_contexto.Users != null)
@@ -76,7 +68,6 @@ namespace LojaVirtualAPI.Controllers
                 }
             }
 
-            
             var tokenHandler = new JwtSecurityTokenHandler();
             var jwtKey = _config["Jwt:Key"];
             if (string.IsNullOrEmpty(jwtKey))
@@ -98,7 +89,6 @@ namespace LojaVirtualAPI.Controllers
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var tokenString = tokenHandler.WriteToken(token);
 
-            
             return Redirect($"http://localhost:3000/home?token={tokenString}");
         }
     }

@@ -113,6 +113,22 @@ app.MapGet("/api/Product/search", async (string? nome, AppDbContext db) =>
 .WithName("PesquisarProdutos")
 .WithTags("Produtos");
 
+app.MapDelete("/api/Product/{id}", async (int id, AppDbContext db) =>
+{
+    var produto = await db.Products.FindAsync(id);
+    if (produto == null)
+    {
+        return Results.NotFound("Produto não encontrado.");
+    }
+
+    db.Products.Remove(produto);
+    await db.SaveChangesAsync();
+    return Results.Ok(new { Mensagem = "Produto deletado com sucesso" });
+})
+.WithName("DeletarProduto")
+.WithTags("Produtos")
+.RequireAuthorization();
+
 app.MapPost("/api/Sale", async (SaleRequest saleRequest, AppDbContext db) =>
 {
     if (db.Sales == null || db.Products == null)
@@ -289,6 +305,35 @@ app.MapGet("/api/User/profile", async (AppDbContext db, HttpContext http) =>
     });
 })
 .WithName("PerfilUsuario")
+.WithTags("Usuários")
+.RequireAuthorization();
+
+app.MapPut("/api/User/profile", async (User updatedUser, AppDbContext db, HttpContext http, IPasswordHasher<User> passwordHasher) =>
+{
+    var userEmail = http.User.FindFirstValue(ClaimTypes.Email);
+    if (string.IsNullOrEmpty(userEmail))
+    {
+        return Results.Unauthorized();
+    }
+
+    var usuario = await db.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+    if (usuario == null)
+    {
+        return Results.NotFound("Usuário não encontrado.");
+    }
+
+    usuario.NomeUsuario = updatedUser.NomeUsuario ?? usuario.NomeUsuario;
+    usuario.Email = updatedUser.Email ?? usuario.Email;
+
+    if (!string.IsNullOrEmpty(updatedUser.Senha))
+    {
+        usuario.Senha = passwordHasher.HashPassword(usuario, updatedUser.Senha);
+    }
+
+    await db.SaveChangesAsync();
+    return Results.Ok(new { Mensagem = "Perfil atualizado com sucesso" });
+})
+.WithName("AlterarPerfil")
 .WithTags("Usuários")
 .RequireAuthorization();
 

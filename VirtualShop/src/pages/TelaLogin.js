@@ -1,26 +1,42 @@
-// src/pages/TelaLogin.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import userService from "../services/userService";
 
 const Login = () => {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [senha, setSenha] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const { email: storedEmail, password: storedPassword } =
-        JSON.parse(storedUser);
-      if (email === storedEmail && password === storedPassword) {
-        navigate("/home");
-      } else {
-        alert("Email ou senha incorretos.");
-      }
-    } else {
-      alert("Nenhum usuário cadastrado.");
+  // Verificar se há um token na URL após login com Google
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+
+    if (token) {
+      localStorage.setItem("token", token);
+      navigate("/home", { replace: true });
     }
+  }, [navigate]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await userService.login({
+        Email: email,
+        Senha: senha,
+      });
+
+      const { token } = response;
+      localStorage.setItem("token", token);
+      navigate("/home");
+    } catch (error) {
+      alert(error.response?.data || "Email ou senha incorretos.");
+      console.error(error);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:5000/api/auth/google-login";
   };
 
   return (
@@ -43,15 +59,15 @@ const Login = () => {
             />
           </div>
           <div className="mb-3">
-            <label htmlFor="password" className="form-label">
+            <label htmlFor="senha" className="form-label">
               Senha:
             </label>
             <input
               type="password"
-              id="password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              id="senha"
+              name="senha"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
               required
               className="form-control"
             />
@@ -60,6 +76,9 @@ const Login = () => {
             Entrar
           </button>
         </form>
+        <button onClick={handleGoogleLogin} className="btn btn-danger w-100 mt-3">
+          Entrar com Google
+        </button>
         <p>
           <Link to="/cadastro">Cadastre-se aqui</Link>
         </p>

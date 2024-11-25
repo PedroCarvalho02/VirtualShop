@@ -14,9 +14,21 @@ using VirtualShopMinimalAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ISaleService, SaleService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -75,7 +87,10 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Endpoints
+
+app.UseCors("AllowAll");
+
+
 app.MapPost("/api/User/register", async (User user, IUserService userService) =>
 {
     return await userService.RegisterUser(user);
@@ -173,45 +188,16 @@ app.MapPost("/api/Sale", async (SaleRequest saleRequest, ISaleService saleServic
 .WithTags("Vendas")
 .RequireAuthorization();
 
-app.MapGet("/api/auth/google-login", async (HttpContext http) =>
+app.MapGet("/api/auth/google-login", async (IAuthService authService, HttpContext http) =>
 {
-    var properties = new AuthenticationProperties { RedirectUri = "http://localhost:5000/api/auth/google-callback" };
-    await http.ChallengeAsync(GoogleDefaults.AuthenticationScheme, properties);
+    await authService.GoogleLogin(http);
 })
 .WithName("LoginComGoogle")
 .WithTags("Autenticação");
 
-app.MapGet("/api/auth/google-callback", async (HttpContext http, AppDbContext db) =>
+app.MapGet("/api/auth/google-callback", async (IAuthService authService, HttpContext http) =>
 {
-    var result = await http.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
-    if (!result.Succeeded || result.Principal == null)
-    {
-        return Results.Unauthorized();
-    }
-
-    var email = result.Principal.FindFirstValue(ClaimTypes.Email);
-    var nome = result.Principal.FindFirstValue(ClaimTypes.Name);
-
-    if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(nome))
-    {
-        return Results.BadRequest("Nome e Email são obrigatórios.");
-    }
-
-    var usuarioExistente = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
-    if (usuarioExistente == null)
-    {
-        var novoUsuario = new User
-        {
-            NomeUsuario = nome,
-            Email = email,
-            IsAdmin = false
-        };
-
-        db.Users.Add(novoUsuario);
-        await db.SaveChangesAsync();
-    }
-
-    return Results.Redirect("http://localhost:3000/home");
+    return await authService.GoogleCallback(http);
 })
 .WithName("GoogleCallback")
 .WithTags("Autenticação");

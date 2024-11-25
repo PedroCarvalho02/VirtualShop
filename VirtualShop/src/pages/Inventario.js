@@ -6,7 +6,7 @@ const Inventario = () => {
   const [refresh, setRefresh] = useState(false);
 
   const handleProductAdded = () => {
-    setRefresh(!refresh); // Toggle refresh state to trigger re-render
+    setRefresh(!refresh);
   };
 
   return (
@@ -16,4 +16,5 @@ const Inventario = () => {
     </div>
   );
 };
+
 export default Inventario;

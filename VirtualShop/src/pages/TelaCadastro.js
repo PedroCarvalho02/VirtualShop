@@ -1,19 +1,25 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import userService from "../services/userService";
 
 const Cadastro = () => {
   const [nome, setNome] = useState("");
   const [cpf, setCpf] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [senha, setSenha] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const user = { nome, cpf, email, password };
-    localStorage.setItem("user", JSON.stringify(user));
-    alert("Cadastro realizado com sucesso!");
-    navigate("/login");
+    const user = { NomeUsuario: nome, Email: email, Senha: senha, Cpf: cpf };
+    try {
+      const response = await userService.register(user);
+      alert("Usuário cadastrado com sucesso!");
+      navigate("/login");
+    } catch (error) {
+      alert(error.response?.data || "Erro ao cadastrar usuário.");
+      console.error(error);
+    }
   };
 
   return (
@@ -64,15 +70,15 @@ const Cadastro = () => {
             />
           </div>
           <div className="mb-3">
-            <label htmlFor="password" className="form-label">
+            <label htmlFor="senha" className="form-label">
               Senha:
             </label>
             <input
               type="password"
-              id="password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              id="senha"
+              name="senha"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
               required
               className="form-control"
             />

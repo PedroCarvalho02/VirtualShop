@@ -1,9 +1,26 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import userService from "../../services/userService";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const fetchPerfil = async () => {
+      try {
+        const perfil = await userService.getProfile(token);
+        setIsAdmin(perfil.isAdmin);
+      } catch (error) {
+        console.error("Erro ao obter perfil:", error);
+      }
+    };
+
+    if (token) {
+      fetchPerfil();
+    }
+  }, [token]);
 
   const handleLogout = async () => {
     try {
@@ -28,9 +45,11 @@ const Navbar = () => {
             <li className="nav-item">
               <Link className="nav-link" to="/home">Home</Link>
             </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/inventario">Inventário</Link>
-            </li>
+            {isAdmin && (
+              <li className="nav-item">
+                <Link className="nav-link" to="/inventario">Inventário</Link>
+              </li>
+            )}
             <li className="nav-item">
               <Link className="nav-link" to="/perfil">Perfil</Link>
             </li>

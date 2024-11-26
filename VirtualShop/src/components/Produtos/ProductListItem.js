@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import productService from "../../services/productServices";
+import productService from "../../services/productService";
 
 const ProductListItem = ({ product, onDelete, onEdit }) => {
   const [isEditing, setIsEditing] = useState(false);

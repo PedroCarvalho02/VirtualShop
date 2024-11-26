@@ -1,21 +1,42 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import userService from "../services/userService";
 
-const PrivateRoute = ({ children }) => {
+const PrivateRoute = ({ children, adminOnly }) => {
   const location = useLocation();
   const token = localStorage.getItem("token");
-  const urlParams = new URLSearchParams(location.search);
-  const tokenFromURL = urlParams.get("token");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (tokenFromURL) {
-      localStorage.setItem("token", tokenFromURL);
-      window.history.replaceState({}, document.title, "/home");
-    }
-  }, [tokenFromURL]);
+    const fetchPerfil = async () => {
+      try {
+        const perfil = await userService.getProfile(token);
+        setIsAdmin(perfil.isAdmin);
+      } catch (error) {
+        console.error("Erro ao obter perfil:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  if (!token && !tokenFromURL) {
-    return <Navigate to="/login" />;
+    if (token) {
+      fetchPerfil();
+    } else {
+      setIsLoading(false);
+    }
+  }, [token]);
+
+  if (isLoading) {
+    return <div className="container"><p>Carregando...</p></div>;
+  }
+
+  if (!token) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (adminOnly && !isAdmin) {
+    return <Navigate to="/home" replace />;
   }
 
   return children;

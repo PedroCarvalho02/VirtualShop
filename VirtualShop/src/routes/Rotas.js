@@ -1,3 +1,4 @@
+// src/routes/Rotas.js
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Login from '../pages/TelaLogin';
 import Cadastro from '../pages/TelaCadastro';
@@ -14,15 +15,19 @@ function Rotas() {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
-        
+
         <Route element={<PrivateRoute><PrivateLayout /></PrivateRoute>}>
           <Route path="/home" element={<Home />} />
-          <Route path="/inventario" element={<Inventario />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/inventario" element={
+            <PrivateRoute adminOnly={true}>
+              <Inventario />
+            </PrivateRoute>
+          } />
         </Route>
       </Routes>
     </BrowserRouter>
   );
 }
 
-export default Rotas;
+export default Rotas; 

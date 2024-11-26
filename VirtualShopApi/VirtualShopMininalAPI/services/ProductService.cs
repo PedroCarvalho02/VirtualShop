@@ -67,5 +67,21 @@ namespace VirtualShopMinimalAPI.Services
             await _db.SaveChangesAsync();
             return Results.Ok(new { Mensagem = "Produto deletado com sucesso" });
         }
+
+        public async Task<IResult> UpdateProduct(int id, Product updatedProduct)
+        {
+            var product = await _db.Products.FindAsync(id);
+            if (product == null)
+            {
+                return Results.NotFound("Produto não encontrado.");
+            }
+
+            product.Nome = updatedProduct.Nome ?? product.Nome;
+            product.Preco = updatedProduct.Preco != 0 ? updatedProduct.Preco : product.Preco;
+            product.ImageUrl = updatedProduct.ImageUrl ?? product.ImageUrl;
+
+            await _db.SaveChangesAsync();
+            return Results.Ok(product);
+        }
     }
 }

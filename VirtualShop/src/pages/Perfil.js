@@ -28,10 +28,10 @@ const Perfil = () => {
   return (
     <div className="container mt-4">
       <h1>Perfil do Usuário</h1>
-      <p><strong>Nome:</strong> {perfil.NomeUsuario}</p>
-      <p><strong>Email:</strong> {perfil.Email}</p>
-      <p><strong>CPF:</strong> {perfil.Cpf}</p>
-      <p><strong>Administrador:</strong> {perfil.IsAdmin ? "Sim" : "Não"}</p>
+      <p><strong>Nome:</strong> {perfil.nomeUsuario}</p>
+      <p><strong>Email:</strong> {perfil.email}</p>
+      <p><strong>CPF:</strong> {perfil.cpf}</p>
+      <p><strong>Administrador:</strong> {perfil.isAdmin ? "Sim" : "Não"}</p>
     </div>
   );
 };

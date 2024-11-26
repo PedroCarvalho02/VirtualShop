@@ -7,7 +7,6 @@ const Login = () => {
   const [senha, setSenha] = useState("");
   const navigate = useNavigate();
 
-  // Verificar se há um token na URL após login com Google
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");

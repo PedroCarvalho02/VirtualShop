@@ -1,14 +1,14 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http.Json;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using System.Text;
+using System.Security.Claims;
 using VirtualShopMinimalAPI.Data;
+using Microsoft.AspNetCore.Identity;
 using VirtualShopMinimalAPI.Models;
 using VirtualShopMinimalAPI.Services;
 
@@ -25,6 +25,7 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Configuração de serviços
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ISaleService, SaleService>();
@@ -44,8 +45,7 @@ var key = Encoding.ASCII.GetBytes(jwtKey);
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;  
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
 {
@@ -63,14 +63,13 @@ builder.Services.AddAuthentication(options =>
 {
     options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
     options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
-})
-.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme);
+});
 
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.Configure<JsonOptions>(options =>
+builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
 {
     options.SerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
 });
@@ -87,10 +86,10 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Aplicar CORS
+// Aplicar CORS antes da autenticação
 app.UseCors("AllowAll");
 
-// Endpoints
+// Definição das rotas
 app.MapPost("/api/User/register", async (User user, IUserService userService) =>
 {
     return await userService.RegisterUser(user);
@@ -104,15 +103,6 @@ app.MapPost("/api/User/login", async (LoginRequest loginRequest, IUserService us
 })
 .WithName("LoginUsuario")
 .WithTags("Usuários");
-
-app.MapPost("/api/User/logout", async (HttpContext http) =>
-{
-    await http.SignOutAsync();
-    return Results.Ok(new { Mensagem = "Logout realizado com sucesso" });
-})
-.WithName("LogoutUsuario")
-.WithTags("Usuários")
-.RequireAuthorization();
 
 app.MapGet("/api/User/profile", async (HttpContext http, IUserService userService) =>
 {

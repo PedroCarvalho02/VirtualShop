@@ -1,30 +1,41 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import productService from "../../services/productService";
 
-const ProductForm = ({ onProductAdded }) => {
+const ProductForm = ({ onProductAdded, productToEdit }) => {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
-  const [quantity, setQuantity] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+
+  useEffect(() => {
+    if (productToEdit) {
+      setName(productToEdit.nome);
+      setPrice(productToEdit.preco);
+      setImageUrl(productToEdit.imageUrl);
+    }
+  }, [productToEdit]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const newProduct = { name, price: parseFloat(price), quantity, imageUrl };
+    const newProduct = { nome: name, preco: parseFloat(price), imageUrl };
+
     try {
-      await productService.addProduct(newProduct);
+      if (productToEdit) {
+        await productService.updateProduct(productToEdit.id, newProduct);
+      } else {
+        await productService.addProduct(newProduct);
+      }
       onProductAdded();
       setName("");
       setPrice("");
-      setQuantity("");
       setImageUrl("");
     } catch (error) {
-      console.error("Erro ao adicionar produto:", error);
+      console.error("Erro ao adicionar/atualizar produto:", error);
     }
   };
 
   return (
     <div className="container">
-      <h2 className="my-4">Adicionar Produto</h2>
+      <h2 className="my-4">{productToEdit ? "Editar Produto" : "Adicionar Produto"}</h2>
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
           <label htmlFor="productName" className="form-label">
@@ -53,19 +64,6 @@ const ProductForm = ({ onProductAdded }) => {
           />
         </div>
         <div className="mb-3">
-          <label htmlFor="productQuantity" className="form-label">
-            Quantidade
-          </label>
-          <input
-            type="number"
-            className="form-control"
-            id="productQuantity"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            required
-          />
-        </div>
-        <div className="mb-3">
           <label htmlFor="imageUrl" className="form-label">
             Imagem (URL):
           </label>
@@ -79,7 +77,7 @@ const ProductForm = ({ onProductAdded }) => {
           />
         </div>
         <button type="submit" className="btn btn-primary">
-          Adicionar Produto
+          {productToEdit ? "Atualizar Produto" : "Adicionar Produto"}
         </button>
       </form>
     </div>

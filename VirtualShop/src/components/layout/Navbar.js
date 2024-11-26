@@ -22,15 +22,9 @@ const Navbar = () => {
     }
   }, [token]);
 
-  const handleLogout = async () => {
-    try {
-      await userService.logout(token);
-      localStorage.removeItem("token");
-      navigate("/login");
-    } catch (error) {
-      alert("Erro ao realizar logout.");
-      console.error(error);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
   };
 
   return (

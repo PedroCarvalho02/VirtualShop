@@ -23,7 +23,7 @@ namespace VirtualShopMinimalAPI.Services
 
         public async Task<IResult> GoogleLogin(HttpContext http)
         {
-            var properties = new AuthenticationProperties { RedirectUri = "http://localhost:5000/api/auth/google-callback" };
+            var properties = new AuthenticationProperties { RedirectUri = "http://localhost:3000/google-callback" };
             await http.ChallengeAsync(GoogleDefaults.AuthenticationScheme, properties);
             return Results.Challenge(properties);
         }

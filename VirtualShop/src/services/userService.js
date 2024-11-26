@@ -11,14 +11,6 @@ const userService = {
     const response = await axios.post(`${baseURL}/login`, loginData);
     return response.data;
   },
-  logout: async (token) => {
-    const response = await axios.post(`${baseURL}/logout`, null, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
-  },
   getProfile: async (token) => {
     const response = await axios.get(`${baseURL}/profile`, {
       headers: {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import productService from "../services/productService";
+import "../styles/card.css";
 
 const Home = () => {
   const [produtos, setProdutos] = useState([]);
@@ -8,7 +9,7 @@ const Home = () => {
     const fetchProdutos = async () => {
       try {
         const data = await productService.getAllProducts();
-        console.log("Produtos recebidos:", data); // Adicione este log para verificar a resposta
+        console.log("Produtos recebidos:", data); 
         setProdutos(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Erro ao buscar produtos:", error);
@@ -44,4 +45,4 @@ const Home = () => {
   );
 };
 
-export default Home;    
+export default Home;

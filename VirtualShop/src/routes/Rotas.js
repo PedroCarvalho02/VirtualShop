@@ -1,4 +1,3 @@
-// src/routes/Rotas.js
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Login from '../pages/TelaLogin';
 import Cadastro from '../pages/TelaCadastro';
@@ -30,4 +29,4 @@ function Rotas() {
   );
 }
 
-export default Rotas; 
+export default Rotas;

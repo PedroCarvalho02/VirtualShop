@@ -3,39 +3,38 @@ import productService from "../../services/productService";
 
 const ProductListItem = ({ product, onDelete, onEdit }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedName, setEditedName] = useState(product.name);
-  const [editedPrice, setEditedPrice] = useState(product.price);
-  const [editedQuantity, setEditedQuantity] = useState(product.quantity);
-  const [editedImage, setEditedImage] = useState(product.urlImage);
+  const [editedName, setEditedName] = useState(product.nome);
+  const [editedPrice, setEditedPrice] = useState(product.preco);
+  const [editedImage, setEditedImage] = useState(product.imageUrl);
 
-  const handleEdit = async () => {
+  const handleEdit = () => {
     setIsEditing(true);
   };
 
   const handleSave = async () => {
     const editedProduct = {
       ...product,
-      name: editedName,
-      price: parseFloat(editedPrice),
-      quantity: editedQuantity,
+      nome: editedName,
+      preco: parseFloat(editedPrice),
       imageUrl: editedImage,
     };
 
     try {
       await productService.updateProduct(product.id, editedProduct);
       setIsEditing(false);
-      onEdit();
+      onEdit(); // Atualiza a lista de produtos
     } catch (error) {
       console.error("Erro ao atualizar produto:", error);
     }
   };
+
   const handleCancel = () => {
     setIsEditing(false);
-    setEditedName(product.name);
-    setEditedPrice(product.price);
-    setEditedQuantity(product.quantity);
+    setEditedName(product.nome);
+    setEditedPrice(product.preco);
     setEditedImage(product.imageUrl);
   };
+
   return (
     <li className="list-group-item">
       {isEditing ? (
@@ -60,15 +59,6 @@ const ProductListItem = ({ product, onDelete, onEdit }) => {
           </div>
           <div className="col">
             <input
-              type="number"
-              className="form-control"
-              value={editedQuantity}
-              onChange={(e) => setEditedQuantity(e.target.value)}
-              required
-            />
-          </div>
-          <div className="col">
-            <input
               type="text"
               className="form-control"
               value={editedImage}
@@ -88,14 +78,14 @@ const ProductListItem = ({ product, onDelete, onEdit }) => {
       ) : (
         <div className="d-flex justify-content-between align-items-center">
           <span>
-            {product.name} - ${product.price}
+            {product.nome} - R${product.preco}
           </span>
           <div>
-            <button className="btn btn-danger me-2" onClick={onDelete}>
-              Deletar
-            </button>
-            <button className="btn btn-primary" onClick={handleEdit}>
+            <button className="btn btn-primary me-2" onClick={handleEdit}>
               Editar
+            </button>
+            <button className="btn btn-danger" onClick={onDelete}>
+              Deletar
             </button>
           </div>
         </div>
@@ -103,4 +93,5 @@ const ProductListItem = ({ product, onDelete, onEdit }) => {
     </li>
   );
 };
+
 export default ProductListItem;

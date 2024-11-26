@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 using VirtualShopMinimalAPI.Data;
 using Microsoft.AspNetCore.Identity;
 using VirtualShopMinimalAPI.Models;
@@ -188,18 +189,68 @@ app.MapPost("/api/Sale", async (SaleRequest saleRequest, ISaleService saleServic
 .WithTags("Vendas")
 .RequireAuthorization();
 
-app.MapGet("/api/auth/google-login", async (IAuthService authService, HttpContext http) =>
+app.MapGet("/api/auth/google-login", async (HttpContext context) =>
 {
-    await authService.GoogleLogin(http);
+    var props = new AuthenticationProperties { RedirectUri = "/api/auth/google-callback" };
+    await context.ChallengeAsync(GoogleDefaults.AuthenticationScheme, props);
 })
-.WithName("LoginComGoogle")
-.WithTags("Autenticação");
+.WithName("GoogleLogin");
 
-app.MapGet("/api/auth/google-callback", async (IAuthService authService, HttpContext http) =>
+app.MapGet("/api/auth/google-callback", async (HttpContext context, AppDbContext _db) =>
 {
-    return await authService.GoogleCallback(http);
+    var result = await context.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+    if (!result.Succeeded || result.Principal == null)
+    {
+        return Results.Unauthorized();
+    }
+
+    // Obter dados do usuário autenticado
+    var email = result.Principal.FindFirstValue(ClaimTypes.Email);
+    var nome = result.Principal.FindFirstValue(ClaimTypes.Name);
+
+    if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(nome))
+    {
+        return Results.BadRequest("Nome e Email são obrigatórios.");
+    }
+
+    // Criar ou atualizar o usuário no banco de dados
+    var usuarioExistente = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+    if (usuarioExistente == null)
+    {
+        var novoUsuario = new User
+        {
+            NomeUsuario = nome,
+            Email = email,
+            IsAdmin = false
+        };
+
+        _db.Users.Add(novoUsuario);
+        await _db.SaveChangesAsync();
+        usuarioExistente = novoUsuario;
+    }
+
+    // Gerar o token JWT
+    var claims = new[]
+    {
+        new Claim(ClaimTypes.Email, usuarioExistente.Email),
+        new Claim("IsAdmin", usuarioExistente.IsAdmin.ToString())
+    };
+
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]);
+    var tokenDescriptor = new SecurityTokenDescriptor
+    {
+        Subject = new ClaimsIdentity(claims),
+        Expires = DateTime.UtcNow.AddHours(1),
+        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+    };
+    var token = tokenHandler.CreateToken(tokenDescriptor);
+    var tokenString = tokenHandler.WriteToken(token);
+
+    // Redirecionar para a página de login com o token como parâmetro
+    var redirectUrl = $"http://localhost:3000/login?token={tokenString}";
+    return Results.Redirect(redirectUrl);
 })
-.WithName("GoogleCallback")
-.WithTags("Autenticação");
+.WithName("GoogleCallback");
 
 app.Run();
